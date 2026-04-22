@@ -1,14 +1,11 @@
 [build]
-builder = "nixpacks"
-buildCommand = "pip install -e ."
+builder = "dockerfile"
 
 [deploy]
-startCommand = "python -m uvicorn content_agent.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
-healthcheckTimeout = 60
+healthcheckTimeout = 120
 restartPolicyType = "on_failure"
 
 [environments.production.variables]
 APP_ENV = "production"
 LOG_LEVEL = "INFO"
-PYTHONPATH = "src"
