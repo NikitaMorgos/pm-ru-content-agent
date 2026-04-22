@@ -1,12 +1,14 @@
 [build]
 builder = "nixpacks"
+buildCommand = "pip install -e ."
 
 [deploy]
-startCommand = "uvicorn content_agent.main:app --host 0.0.0.0 --port $PORT"
+startCommand = "python -m uvicorn content_agent.main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+healthcheckTimeout = 60
 restartPolicyType = "on_failure"
 
 [environments.production.variables]
 APP_ENV = "production"
 LOG_LEVEL = "INFO"
+PYTHONPATH = "src"
