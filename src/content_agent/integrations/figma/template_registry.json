@@ -1,0 +1,174 @@
+{
+  "_meta": {
+    "figma_file_key": "6ftFaqPgnvCbCmyjzxDcKI",
+    "figma_file_url": "https://www.figma.com/design/6ftFaqPgnvCbCmyjzxDcKI/",
+    "last_synced": "2026-04-14",
+    "categories": ["table", "chair"],
+    "note": "frame_id = top-level frame on Page 1. fill_map keys are TZ field names, values are Figma TEXT node_ids within that frame."
+  },
+
+  "table": {
+    "pilot_article": "184109",
+    "slides": {
+      "preview": {
+        "frame_id": "2:11",
+        "label": "Превью",
+        "required": true,
+        "fill_map": {
+          "product_title":       "2:20",
+          "dimensions_hwl":      "2:21",
+          "legs_material":       "2:22",
+          "brand":               "2:23",
+          "utp_assembly":        "2:42",
+          "utp_surface":         "2:53",
+          "tabletop_finish":     "2:58",
+          "tabletop_material":   "2:59"
+        }
+      },
+      "dimensions_folded": {
+        "frame_id": "2:60",
+        "label": "Габариты (сложенный вид)",
+        "required": true,
+        "fill_map": {
+          "width_cm":  "2:69",
+          "height_cm": "2:74"
+        }
+      },
+      "utp_tabletop": {
+        "frame_id": "2:77",
+        "label": "УТП столешницы / Макро",
+        "required": true,
+        "fill_map": {
+          "capacity_text":        "2:85",
+          "utp_care":             "2:112",
+          "tabletop_load":        "2:122",
+          "tabletop_material":    "2:123"
+        }
+      },
+      "legs_material": {
+        "frame_id": "2:124",
+        "label": "Материал ножек",
+        "required": true,
+        "fill_map": {
+          "legs_material_text":  "2:127",
+          "utp_support":         "2:137",
+          "utp_construction":    "2:148",
+          "height_adjustment":   "2:150"
+        }
+      },
+      "dimensions_open": {
+        "frame_id": "4:966",
+        "label": "Габариты разложенный вид",
+        "required": false,
+        "condition_field": "is_extendable",
+        "fill_map": {}
+      },
+      "mechanism": {
+        "frame_id": "4:1069",
+        "label": "Механизм трансформации",
+        "required": false,
+        "condition_field": "is_extendable",
+        "fill_map": {}
+      },
+      "design_accent": {
+        "frame_id": "4:924",
+        "label": "Дизайн / стильный акцент",
+        "required": false,
+        "condition_field": "has_interior_photo",
+        "fill_map": {}
+      }
+    }
+  },
+
+  "chair": {
+    "pilot_article": "190870",
+    "slides": {
+      "preview": {
+        "frame_id": "4:2387",
+        "label": "Превью",
+        "required": true,
+        "note": "Variant frames: 4:2387 (var1), 4:2420 (var2), 4:2453 (var3), 4:2263 (var4). Select by variant index.",
+        "variant_frame_ids": ["4:2387", "4:2420", "4:2453", "4:2263"],
+        "fill_map": {
+          "brand":        "4:2391",
+          "product_type": "4:2393",
+          "max_load":     "4:2394",
+          "utp_care":     "4:2418",
+          "fabric_type":  "4:2419"
+        }
+      },
+      "dimensions": {
+        "frame_id": "4:2339",
+        "label": "Габариты",
+        "required": true,
+        "fill_map": {
+          "width_cm":        "4:2343",
+          "depth_cm":        "4:2345",
+          "height_cm":       "4:2351",
+          "seat_height_cm":  "4:2355"
+        }
+      },
+      "upholstery_material": {
+        "frame_id": "4:2104",
+        "label": "Материал обивки",
+        "required": true,
+        "fill_map": {
+          "fabric_name":    "4:2107",
+          "utp_washable":   "4:2131",
+          "utp_feel":       "4:2139"
+        }
+      },
+      "seating_ergonomics": {
+        "frame_id": "4:2356",
+        "label": "Посадка / эргономика",
+        "required": true,
+        "fill_map": {
+          "seat_height":    "4:2358",
+          "backrest":       "4:2359",
+          "comfort":        "4:2360"
+        }
+      },
+      "legs_material": {
+        "frame_id": "4:2232",
+        "label": "Материал ножек",
+        "required": true,
+        "fill_map": {
+          "legs_material":  "4:2235",
+          "utp_durability": "4:2246",
+          "utp_scratch":    "4:2256",
+          "max_load":       "4:2262"
+        }
+      },
+      "universal_use": {
+        "frame_id": "4:2145",
+        "label": "Универсальное применение",
+        "required": false,
+        "condition_field": "has_universal_utp",
+        "fill_map": {
+          "utp_universal":  "4:2154",
+          "utp_label":      "4:2165"
+        }
+      },
+      "color_palette": {
+        "frame_id": "4:2296",
+        "label": "Цветовая палитра / интерьер",
+        "required": true,
+        "fill_map": {
+          "color_range":      "4:2308",
+          "space_saving":     "4:2319",
+          "design_accent":    "4:2321"
+        }
+      },
+      "antiscratch": {
+        "frame_id": "4:2322",
+        "label": "Антикоготь",
+        "required": false,
+        "condition_field": "has_antiscratch",
+        "fill_map": {
+          "label":        "4:2324",
+          "description":  "4:2326"
+        }
+      }
+    }
+  }
+}

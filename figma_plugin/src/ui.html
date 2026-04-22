@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    body { font-family: Inter, sans-serif; font-size: 12px; margin: 12px; color: #1a1a1a; }
+    h3 { margin: 0 0 10px; font-size: 14px; }
+    label { display: block; margin-bottom: 4px; font-weight: 600; }
+    input { width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #ccc;
+            border-radius: 4px; font-size: 12px; }
+    button { margin-top: 10px; width: 100%; padding: 8px; background: #18a0fb;
+             color: #fff; border: none; border-radius: 6px; font-size: 13px;
+             font-weight: 600; cursor: pointer; }
+    button:hover { background: #0d8de3; }
+    #log { margin-top: 12px; font-size: 11px; color: #555; min-height: 80px;
+           max-height: 120px; overflow-y: auto; background: #f5f5f5;
+           padding: 6px; border-radius: 4px; }
+    .ok  { color: #1a7c3e; }
+    .err { color: #c0392b; }
+  </style>
+</head>
+<body>
+  <h3>PM-RU Render Plugin</h3>
+
+  <label for="url">Backend URL</label>
+  <input id="url" type="text" value="http://localhost:8000/api/v1" />
+
+  <button id="start">Start polling</button>
+
+  <div id="log"></div>
+
+  <script>
+    const log = document.getElementById('log');
+    const urlInput = document.getElementById('url');
+    const btn = document.getElementById('start');
+
+    function addLine(text, cls) {
+      const d = document.createElement('div');
+      d.textContent = `[${new Date().toLocaleTimeString()}] ${text}`;
+      if (cls) d.className = cls;
+      log.prepend(d);
+    }
+
+    btn.addEventListener('click', () => {
+      const url = urlInput.value.trim();
+      parent.postMessage({ pluginMessage: { type: 'set-backend-url', backendUrl: url } }, '*');
+      parent.postMessage({ pluginMessage: { type: 'start' } }, '*');
+      btn.disabled = true;
+      btn.textContent = 'Running…';
+      addLine('Started.', 'ok');
+    });
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+      if (msg.type === 'status') addLine(msg.text);
+      if (msg.type === 'done')   addLine(msg.text, 'ok');
+      if (msg.type === 'error')  addLine(msg.text, 'err');
+    };
+  </script>
+</body>
+</html>

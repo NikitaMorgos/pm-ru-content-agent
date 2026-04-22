@@ -1,0 +1,46 @@
+# figma_plugin (deprecated approach — kept for reference, node_modules excluded)
+figma_plugin/node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Environment — NEVER commit these
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docs outputs (generated)
+docs/*.pdf
+docs/test_slide_preview.png
+docs/figma_nodes*.json
+docs/figma_structure*.json
+docs/figma_analysis*.txt
+docs/figma_text_layers*.txt
+
+# Figma template cache (large PNGs — download via sync_figma_cache.py)
+src/content_agent/integrations/figma/template_cache/*.png
+src/content_agent/integrations/figma/template_cache/*.json
+
+# Temporary slide outputs
+*.tmp
+/tmp/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

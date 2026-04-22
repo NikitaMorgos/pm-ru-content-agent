@@ -1,0 +1,26 @@
+{
+  "hero": {
+    "file_key": "REPLACE_WITH_FIGMA_FILE_KEY",
+    "frame_id": "REPLACE_WITH_FRAME_ID",
+    "version": "v1.0",
+    "description": "Main product hero shot with title overlay"
+  },
+  "dimensions": {
+    "file_key": "REPLACE_WITH_FIGMA_FILE_KEY",
+    "frame_id": "REPLACE_WITH_FRAME_ID",
+    "version": "v1.0",
+    "description": "Size and dimension infographic"
+  },
+  "colors": {
+    "file_key": "REPLACE_WITH_FIGMA_FILE_KEY",
+    "frame_id": "REPLACE_WITH_FRAME_ID",
+    "version": "v1.0",
+    "description": "Color variant grid (2-8 swatches)"
+  },
+  "simple_benefit": {
+    "file_key": "REPLACE_WITH_FIGMA_FILE_KEY",
+    "frame_id": "REPLACE_WITH_FRAME_ID",
+    "version": "v1.0",
+    "description": "Single key benefit highlight with icon"
+  }
+}

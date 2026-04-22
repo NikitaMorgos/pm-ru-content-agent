@@ -1,0 +1,9 @@
+{
+  "name": "PM-RU Content Agent — Render Plugin",
+  "id": "pm-ru-content-agent-render",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "ui": "dist/ui.html",
+  "editorType": ["figma"],
+  "permissions": ["currentuser", "fileusers"]
+}
