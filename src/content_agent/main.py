@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import structlog
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from content_agent.api.routes import jobs, tasks, webhooks
 from content_agent.admin.routes import router as admin_router
@@ -23,6 +24,14 @@ def create_app() -> FastAPI:
         description="Automated pipeline for assembling marketplace product cards",
         version="0.1.0",
         lifespan=lifespan,
+    )
+
+    # CORS – allow Figma plugin (null origin) and local dev
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Admin panel (serves SPA at /admin and API at /admin/api/*)

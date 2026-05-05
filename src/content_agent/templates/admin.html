@@ -159,7 +159,7 @@
           </li>
           <li class="flex gap-3">
             <span class="font-bold text-brand-500 flex-shrink-0 mt-0.5">③</span>
-            <p>Заполни поля: артикул, вариант/цвет, бренд, название, размеры, материалы, УТП и ссылки на фото</p>
+            <p>Заполни поля: артикул, вариант/цвет, бренд, название, размеры, материалы, УТП и ссылку на папку с фотографиями</p>
           </li>
           <li class="flex gap-3">
             <span class="font-bold text-brand-500 flex-shrink-0 mt-0.5">④</span>
@@ -167,7 +167,11 @@
           </li>
           <li class="flex gap-3">
             <span class="font-bold text-brand-500 flex-shrink-0 mt-0.5">⑤</span>
-            <p>Следи за прогрессом. Когда статус изменится на <span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">Готово</span> — нажми <strong>«Слайд 1»</strong> и т.д. для скачивания</p>
+            <p>Следи за прогрессом. Когда статус изменится на <span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">Готово</span> — в карточке задания появятся кнопки <strong>«Слайд 1»</strong>, <strong>«Слайд 2»</strong> и т.д.</p>
+          </li>
+          <li class="flex gap-3">
+            <span class="font-bold text-brand-500 flex-shrink-0 mt-0.5">⑥</span>
+            <p>Нажми на кнопку нужного слайда — браузер скачает PNG-файл. Все слайды задания доступны через кнопку <strong>«Папка с результатами»</strong></p>
           </li>
         </ol>
       </section>
@@ -197,7 +201,7 @@
               <tr class="hover:bg-slate-50"><td class="px-4 py-2 font-medium">Высота сиденья</td><td class="px-4 py-2"></td><td class="px-4 py-2 text-slate-500">Только для стульев</td><td class="px-4 py-2 font-mono text-slate-600">46</td></tr>
               <tr class="hover:bg-slate-50"><td class="px-4 py-2 font-medium">Столешница</td><td class="px-4 py-2"></td><td class="px-4 py-2 text-slate-500">Материал столешницы</td><td class="px-4 py-2 font-mono text-slate-600">ЛДСП 22 мм</td></tr>
               <tr class="hover:bg-slate-50"><td class="px-4 py-2 font-medium">УТП 1–5</td><td class="px-4 py-2 text-orange-500">➕</td><td class="px-4 py-2 text-slate-500">Заполни хотя бы 3 преимущества</td><td class="px-4 py-2 font-mono text-slate-600">Антисцарапин покрытие</td></tr>
-              <tr class="hover:bg-slate-50"><td class="px-4 py-2 font-medium">Фото URL</td><td class="px-4 py-2 text-orange-500">➕</td><td class="px-4 py-2 text-slate-500">Прямая ссылка на изображение</td><td class="px-4 py-2 font-mono text-slate-600 truncate max-w-xs">https://...</td></tr>
+              <tr class="hover:bg-slate-50"><td class="px-4 py-2 font-medium">Папка с фото</td><td class="px-4 py-2 text-orange-500">➕</td><td class="px-4 py-2 text-slate-500">Ссылка на папку с контентом (Яндекс Диск, Google Drive). Система сама выбирает фото для каждого слайда.</td><td class="px-4 py-2 font-mono text-slate-600 truncate max-w-xs">https://disk.yandex.ru/d/...</td></tr>
             </tbody>
           </table>
         </div>
@@ -289,156 +293,195 @@
     </div>
 
     <form id="tz-form" class="px-6 py-5 space-y-6" onsubmit="submitForm(event)">
-
-      <!-- Category -->
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Категория товара</label>
-        <div class="flex gap-3">
-          <label class="flex-1 cursor-pointer">
-            <input type="radio" name="category" value="table" class="sr-only peer" required />
-            <div class="peer-checked:bg-brand-50 peer-checked:border-brand-500 peer-checked:text-brand-600 border-2 border-slate-200 rounded-xl p-3 text-center transition-all font-medium text-sm">
-              🪑 Стол
+      <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Вводная по товару</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-700 mb-2">Категория товара</label>
+            <div class="flex gap-3">
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="category" value="table" class="sr-only peer" required />
+                <div class="peer-checked:bg-brand-50 peer-checked:border-brand-500 peer-checked:text-brand-600 border-2 border-slate-200 rounded-xl p-3 text-center transition-all font-medium text-sm">Стол</div>
+              </label>
+              <label class="flex-1 cursor-pointer">
+                <input type="radio" name="category" value="chair" class="sr-only peer" />
+                <div class="peer-checked:bg-brand-50 peer-checked:border-brand-500 peer-checked:text-brand-600 border-2 border-slate-200 rounded-xl p-3 text-center transition-all font-medium text-sm">Стул</div>
+              </label>
             </div>
-          </label>
-          <label class="flex-1 cursor-pointer">
-            <input type="radio" name="category" value="chair" class="sr-only peer" />
-            <div class="peer-checked:bg-brand-50 peer-checked:border-brand-500 peer-checked:text-brand-600 border-2 border-slate-200 rounded-xl p-3 text-center transition-all font-medium text-sm">
-              🪑 Стул
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Артикул *</label>
+              <input name="article" required placeholder="184109" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
             </div>
-          </label>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">ID варианта</label>
+              <input name="variant_id" placeholder="190870" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Вариант/цвет</label>
+              <input name="variant" placeholder="Серый велюр" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Бренд *</label>
+              <input name="brand" required placeholder="БЕННИ" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Название товара *</label>
+              <input name="product_name" required placeholder="Стул обеденный мягкий" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Ширина *</label>
+              <input name="width_cm" type="number" required min="1" step="0.1" placeholder="48" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Глубина *</label>
+              <input name="depth_cm" type="number" required min="1" step="0.1" placeholder="55" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Высота *</label>
+              <input name="height_cm" type="number" required min="1" step="0.1" placeholder="86" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div id="seat-height-wrap" class="hidden">
+              <label class="block text-xs text-slate-500 mb-1">Высота сиденья</label>
+              <input name="seat_height_cm" type="number" min="1" step="0.1" placeholder="48" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Источник контента *</label>
+              <select name="source_type" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow">
+                <option value="yandex">Yandex Disk</option>
+                <option value="google">Google Drive</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Ссылка на исходники *</label>
+              <input name="photo_folder_url" type="url" required placeholder="https://disk.yandex.ru/d/..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Article & Variant -->
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Артикул <span class="text-red-400">*</span></label>
-          <input name="article" required placeholder="напр. 184109" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Вариант / цвет</label>
-          <input name="variant" placeholder="напр. Белый" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-        </div>
-      </div>
-
-      <!-- Brand & Name -->
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Бренд <span class="text-red-400">*</span></label>
-          <input name="brand" required placeholder="напр. БЕННИ" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-        </div>
-        <div>
-          <label class="block text-sm font-semibold text-slate-700 mb-1.5">Название товара <span class="text-red-400">*</span></label>
-          <input name="product_name" required placeholder="напр. Стол обеденный раскладной" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-        </div>
-      </div>
-
-      <!-- Dimensions -->
       <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Размеры (см)</label>
-        <div class="grid grid-cols-4 gap-3" id="dims-grid">
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Ширина <span class="text-red-400">*</span></label>
-            <input name="width_cm" type="number" required min="1" step="0.1" placeholder="75" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Глубина <span class="text-red-400">*</span></label>
-            <input name="depth_cm" type="number" required min="1" step="0.1" placeholder="90" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Высота <span class="text-red-400">*</span></label>
-            <input name="height_cm" type="number" required min="1" step="0.1" placeholder="66" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
-          <div id="seat-height-wrap" class="hidden">
-            <label class="block text-xs text-slate-500 mb-1">Высота сиденья</label>
-            <input name="seat_height_cm" type="number" min="1" step="0.1" placeholder="46" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Настройки по слайдам</p>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button type="button" class="slide-tab-btn px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-600" data-tab="slide-preview">1. Превью</button>
+          <button type="button" class="slide-tab-btn px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-600" data-tab="slide-dimensions">2. Габариты</button>
+          <button type="button" class="slide-tab-btn px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-600" data-tab="slide-upholstery">3. Материал</button>
+          <button type="button" class="slide-tab-btn px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-600" data-tab="slide-ergonomics">4. УТП/посадка</button>
+          <button type="button" class="slide-tab-btn px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-600" data-tab="slide-legs">5. Ножки</button>
+          <button type="button" class="slide-tab-btn px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-600" data-tab="slide-color">6. Палитра</button>
         </div>
-      </div>
 
-      <!-- Table materials -->
-      <div id="table-materials">
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Материалы (стол)</label>
-        <div class="grid grid-cols-3 gap-3">
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Столешница</label>
-            <input name="tabletop_material" placeholder="ЛДСП 22 мм" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+        <div id="slide-preview" class="slide-tab-panel bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+          <p class="text-xs text-slate-500">Первый слайд — общий кадр (интерьер 3/4 или нейтральный fallback).</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">УТП 1</label>
+              <input name="utp_1" placeholder="Например: удобная посадка" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">УТП 2</label>
+              <input name="utp_2" placeholder="Например: прочный каркас" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
           </div>
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Цвет/отделка</label>
-            <input name="tabletop_finish" placeholder="Дуб сонома" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Ножки</label>
-            <input name="legs_material" placeholder="Металл, порошковая окраска" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Chair materials -->
-      <div id="chair-materials" class="hidden">
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Материалы (стул)</label>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Ткань/обивка</label>
-            <input name="fabric_type" placeholder="Велюр, кат. B" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Каркас</label>
-            <input name="frame_material" placeholder="Бук, МДФ" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Макс. нагрузка</label>
-            <input name="max_load" placeholder="120 кг" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
-          <div>
-            <label class="block text-xs text-slate-500 mb-1">Цвет</label>
-            <input name="legs_material" placeholder="Серый / Бежевый" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          </div>
-        </div>
-      </div>
-
-      <!-- UTPs -->
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">УТП / Преимущества</label>
-        <div class="space-y-2">
-          <input name="utp_1" placeholder="УТП 1 — главное преимущество" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          <input name="utp_2" placeholder="УТП 2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          <input name="utp_3" placeholder="УТП 3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          <input name="utp_4" placeholder="УТП 4 (опционально)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          <input name="utp_5" placeholder="УТП 5 (опционально)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-        </div>
-      </div>
-
-      <!-- Options -->
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Особенности</label>
-        <div class="flex flex-wrap gap-3">
-          <label id="flag-extendable" class="flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" name="is_extendable" class="w-4 h-4 rounded accent-brand-500" />
-            <span class="text-sm text-slate-600">Стол-трансформер</span>
-          </label>
           <label id="flag-antiscratch" class="hidden flex items-center gap-2 cursor-pointer">
             <input type="checkbox" name="has_antiscratch" class="w-4 h-4 rounded accent-brand-500" />
             <span class="text-sm text-slate-600">Антикоготь</span>
           </label>
         </div>
-      </div>
 
-      <!-- Photos -->
-      <div>
-        <label class="block text-sm font-semibold text-slate-700 mb-2">Фотографии (URL)</label>
-        <div class="space-y-2">
-          <input name="photo_url_1" type="url" placeholder="https://... — главное фото" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          <input name="photo_url_2" type="url" placeholder="https://... — фото 2" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          <input name="photo_url_3" type="url" placeholder="https://... — фото 3" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          <input name="photo_url_4" type="url" placeholder="https://... — фото 4 (опционально)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
-          <input name="photo_url_5" type="url" placeholder="https://... — фото 5 (опционально)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+        <div id="slide-dimensions" class="slide-tab-panel hidden bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+          <p class="text-xs text-slate-500">Используются размеры из вводного блока. При необходимости укажите доп. пояснение.</p>
+          <input name="capacity_text" placeholder="Доп. пояснение к размерам (опц.)" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+        </div>
+
+        <div id="slide-upholstery" class="slide-tab-panel hidden bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Ткань/обивка</label>
+              <input name="fabric_type" placeholder="Велюр, рогожка..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">УТП 3</label>
+              <input name="utp_3" placeholder="Например: легко чистится" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+          </div>
+        </div>
+
+        <div id="slide-ergonomics" class="slide-tab-panel hidden bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Комфорт</label>
+              <input name="comfort" placeholder="Мягкая посадка" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Спинка</label>
+              <input name="backrest" placeholder="Анатомическая" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Макс. нагрузка</label>
+              <input name="max_load" placeholder="120 кг" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+          </div>
+        </div>
+
+        <div id="slide-legs" class="slide-tab-panel hidden bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Материал ножек</label>
+              <input name="legs_material" placeholder="Металл, массив..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Каркас</label>
+              <input name="frame_material" placeholder="Бук, МДФ..." class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+          </div>
+        </div>
+
+        <div id="slide-color" class="slide-tab-panel hidden bg-white border border-slate-200 rounded-xl p-4 space-y-3">
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Цветовая палитра</label>
+              <input name="color_range" placeholder="5 оттенков" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Для небольших пространств</label>
+              <input name="space_saving" placeholder="Компактный силуэт" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Дизайн-акцент</label>
+              <input name="design_accent" placeholder="Трендовая форма" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">УТП 4</label>
+              <input name="utp_4" placeholder="Опционально" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">УТП 5</label>
+              <input name="utp_5" placeholder="Опционально" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm transition-shadow" />
+            </div>
+          </div>
+          <label id="flag-extendable" class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="is_extendable" class="w-4 h-4 rounded accent-brand-500" />
+            <span class="text-sm text-slate-600">Стол-трансформер (для категории стол)</span>
+          </label>
         </div>
       </div>
 
       <!-- Submit -->
       <div class="pt-2 pb-1 flex gap-3 justify-end border-t border-slate-100">
+        <label class="mr-auto flex items-center gap-2 text-xs text-slate-600">
+          <input id="run-pipeline-checkbox" type="checkbox" checked class="w-4 h-4 rounded accent-brand-500" />
+          Сразу запускать рендер после сохранения ТЗ
+        </label>
         <button type="button" onclick="closeModal()" class="px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Отмена</button>
         <button type="submit" id="submit-btn" class="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors text-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
@@ -546,6 +589,13 @@ function renderJobCard(job) {
     : job.state === 'running' ? `Шаг ${progress+1}/${STEPS.length}: ${job.current_step_label || job.current_step}`
     : 'Ожидает запуска';
 
+  const slideLabels = {
+    preview: 'Превью', dimensions: 'Габариты', upholstery_material: 'Обивка',
+    seating_ergonomics: 'Посадка', legs_material: 'Ножки', color_palette: 'Палитра',
+    dimensions_folded: 'Габариты (сложен.)', utp_tabletop: 'УТП столешн.',
+    legs_material_table: 'Ножки', design_accent: 'Дизайн',
+  };
+
   const resultsBlock = job.result_urls && job.result_urls.length > 0 ? `
     <div class="mt-3 pt-3 border-t border-slate-100">
       <p class="text-xs font-semibold text-slate-500 mb-2">Результаты (${job.result_urls.length} файлов)</p>
@@ -553,21 +603,30 @@ function renderJobCard(job) {
         ${job.result_urls.map((url, i) => {
           const filename = url.split(/[/\\]/).pop();
           const dlUrl = `/admin/api/jobs/${job.id}/slides/${encodeURIComponent(filename)}`;
+          const typeMatch = filename.match(/_([a-z_]+)\.png$/);
+          const label = typeMatch ? (slideLabels[typeMatch[1]] || typeMatch[1]) : `Слайд ${i+1}`;
+          const num = filename.match(/_(\d+)_/);
+          const numLabel = num ? `${num[1]}. ` : '';
           return `
-          <a href="${dlUrl}" target="_blank" class="flex items-center gap-1.5 text-xs bg-green-50 text-green-700 border border-green-200 rounded-lg px-3 py-1.5 hover:bg-green-100 transition-colors font-medium">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-            Слайд ${i+1}
+          <a href="${dlUrl}" download="${filename}" class="flex items-center gap-1.5 text-xs bg-green-50 text-green-700 border border-green-200 rounded-lg px-3 py-1.5 hover:bg-green-100 transition-colors font-medium">
+            <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+            ${numLabel}${label}
           </a>`;
         }).join('')}
       </div>
     </div>
-  ` : '';
+  ` : (job.state === 'done' ? `
+    <div class="mt-3 pt-3 border-t border-slate-100">
+      <p class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        ⚠ Слайды ещё не сгенерированы. Откройте Figma-плагин и нажмите «▶ Figma-рендер» для этого задания.
+      </p>
+    </div>
+  ` : '');
 
-  const resultsFolderBlock = job.state === 'done' ? `
-    <div class="mt-3">
-      <button onclick="copyResultsPath('${job.id}')" class="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 transition-colors">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-        Папка с результатами
+  const resultsFolderBlock = job.result_urls && job.result_urls.length > 0 ? `
+    <div class="mt-2">
+      <button onclick="addCheckpointNote('${job.id}')" class="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 transition-colors">
+        + Комментарий по результату (${(job.feedback_notes || []).length})
       </button>
     </div>
   ` : '';
@@ -621,6 +680,7 @@ function showJobDetail(jobId) {
         ['Категория', tz.category === 'table' ? 'Стол' : 'Стул'],
         ['Артикул', tz.article],
         ['Вариант', tz.variant || '—'],
+        ['ID варианта', tz.variant_id || '—'],
         ['Бренд', tz.brand],
         ['Название', tz.product_name],
         ['Ш × Г × В (см)', `${tz.width_cm} × ${tz.depth_cm} × ${tz.height_cm}`],
@@ -631,6 +691,8 @@ function showJobDetail(jobId) {
         tz.fabric_type ? ['Ткань', tz.fabric_type] : null,
         tz.frame_material ? ['Каркас', tz.frame_material] : null,
         tz.max_load ? ['Нагрузка', tz.max_load] : null,
+        tz.source_type ? ['Источник', tz.source_type] : null,
+        tz.photo_folder_url ? ['Папка', tz.photo_folder_url] : null,
         [tz.utp_1 ? 'УТП 1' : null, tz.utp_1],
         [tz.utp_2 ? 'УТП 2' : null, tz.utp_2],
         [tz.utp_3 ? 'УТП 3' : null, tz.utp_3],
@@ -655,6 +717,21 @@ function copyResultsPath(jobId) {
   showToast(`Путь скопирован: ${path}`);
 }
 
+async function addCheckpointNote(jobId) {
+  const note = prompt('Комментарий Ники/Лили по результату:');
+  if (!note || !note.trim()) return;
+  try {
+    const fd = new FormData();
+    fd.append('note', note.trim());
+    const res = await fetch(`${BASE}/api/jobs/${jobId}/feedback`, { method: 'POST', body: fd });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showToast('Комментарий сохранён');
+    loadJobs();
+  } catch (err) {
+    showToast(`Не удалось сохранить комментарий: ${err.message}`);
+  }
+}
+
 function showToast(msg) {
   const t = document.createElement('div');
   t.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-sm px-5 py-3 rounded-full shadow-lg z-50 transition-all';
@@ -667,6 +744,7 @@ function showToast(msg) {
 function openModal() {
   document.getElementById('modal').classList.remove('hidden');
   document.getElementById('tz-form').reset();
+  activateSlideTab('slide-preview');
 }
 
 function closeModal() {
@@ -677,14 +755,34 @@ document.getElementById('modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
 
-document.querySelectorAll('input[name="category"]').forEach(r => {
-  r.addEventListener('change', function() {
+function activateSlideTab(tabId) {
+  document.querySelectorAll('.slide-tab-panel').forEach(panel => {
+    panel.classList.toggle('hidden', panel.id !== tabId);
+  });
+  document.querySelectorAll('.slide-tab-btn').forEach(btn => {
+    const active = btn.dataset.tab === tabId;
+    btn.classList.toggle('bg-brand-500', active);
+    btn.classList.toggle('text-white', active);
+    btn.classList.toggle('border-brand-500', active);
+    btn.classList.toggle('bg-white', !active);
+    btn.classList.toggle('text-slate-600', !active);
+    btn.classList.toggle('border-slate-300', !active);
+  });
+}
+
+document.querySelectorAll('.slide-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => activateSlideTab(btn.dataset.tab));
+});
+
+document.querySelectorAll('input[name="category"]').forEach(radio => {
+  radio.addEventListener('change', function() {
     const isChair = this.value === 'chair';
-    document.getElementById('table-materials').classList.toggle('hidden', isChair);
-    document.getElementById('chair-materials').classList.toggle('hidden', !isChair);
-    document.getElementById('seat-height-wrap').classList.toggle('hidden', !isChair);
-    document.getElementById('flag-extendable').classList.toggle('hidden', isChair);
-    document.getElementById('flag-antiscratch').classList.toggle('hidden', !isChair);
+    const seatWrap = document.getElementById('seat-height-wrap');
+    const extendable = document.getElementById('flag-extendable');
+    const antiscratch = document.getElementById('flag-antiscratch');
+    if (seatWrap) seatWrap.classList.toggle('hidden', !isChair);
+    if (extendable) extendable.classList.toggle('hidden', isChair);
+    if (antiscratch) antiscratch.classList.toggle('hidden', !isChair);
   });
 });
 
@@ -708,6 +806,7 @@ async function submitForm(e) {
   // Defaults for checkboxes
   if (!data.is_extendable) data.is_extendable = false;
   if (!data.has_antiscratch) data.has_antiscratch = false;
+  data.run_pipeline = document.getElementById('run-pipeline-checkbox').checked;
 
   try {
     const res = await fetch(`${BASE}/api/jobs`, {

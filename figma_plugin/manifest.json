@@ -1,9 +1,8 @@
 {
-  "name": "PM-RU Content Agent — Render Plugin",
-  "id": "pm-ru-content-agent-render",
+  "name": "PM-RU Content Agent",
+  "id": "pm-ru-content-agent-pipeline",
   "api": "1.0.0",
-  "main": "dist/code.js",
-  "ui": "dist/ui.html",
-  "editorType": ["figma"],
-  "permissions": ["currentuser", "fileusers"]
+  "main": "code.js",
+  "ui": "ui.html",
+  "editorType": ["figma"]
 }

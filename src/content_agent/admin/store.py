@@ -29,6 +29,7 @@ STEP_NAMES = {k: v for k, v in PIPELINE_STEPS}
 class TZForm(BaseModel):
     category: Literal["table", "chair"]
     article: str
+    variant_id: str = ""        # ID варианта для нейминга выгрузки
     variant: str = ""           # цвет / модификация
     brand: str
     product_name: str
@@ -54,16 +55,24 @@ class TZForm(BaseModel):
     utp_4: str = ""
     utp_5: str = ""
 
+    # Slide-specific text fields (V1 tabbed TZ form)
+    backrest: str = ""
+    comfort: str = ""
+    color_range: str = ""
+    space_saving: str = ""
+    design_accent: str = ""
+    capacity_text: str = ""
+    height_adjustment: str = ""
+    tabletop_load: str = ""
+
     # Optional feature flags
     is_extendable: bool = False       # стол-трансформер
     has_antiscratch: bool = False     # антикоготь (стулья)
 
-    # Photos
-    photo_url_1: str = ""
-    photo_url_2: str = ""
-    photo_url_3: str = ""
-    photo_url_4: str = ""
-    photo_url_5: str = ""
+    # Photos — ссылка на папку; система сама подбирает фото по слайдам
+    photo_folder_url: str = ""
+    source_type: Literal["yandex", "google"] = "yandex"
+    run_pipeline: bool = True
 
 
 # ── Job record ────────────────────────────────────────────────────────────────
@@ -77,6 +86,7 @@ class AdminJob(BaseModel):
     step_index: int = 0             # 0-based, out of len(PIPELINE_STEPS)
     error_message: str = ""
     result_urls: list[str] = Field(default_factory=list)
+    feedback_notes: list[str] = Field(default_factory=list)
     celery_task_id: str = ""
     created_at: str = Field(
         default_factory=lambda: datetime.now().strftime("%d %b %Y, %H:%M")
