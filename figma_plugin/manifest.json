@@ -4,5 +4,13 @@
   "api": "1.0.0",
   "main": "code.js",
   "ui": "ui.html",
-  "editorType": ["figma"]
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": [
+      "https://pm-ru-content-agent-production.up.railway.app",
+      "http://localhost:8001",
+      "https://cloud-api.yandex.net",
+      "https://downloader.disk.yandex.ru"
+    ]
+  }
 }
