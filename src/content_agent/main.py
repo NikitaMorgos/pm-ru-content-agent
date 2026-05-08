@@ -26,12 +26,14 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS – allow Figma plugin (null origin from sandboxed iframe) and local dev
+    # CORS – wildcard for all origins; Figma plugin sends Origin: null
+    # which browsers allow when credentials: 'omit' (default)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*", "null"],
+        allow_origins=["*"],
         allow_methods=["*"],
         allow_headers=["*"],
+        allow_credentials=False,
     )
 
     # Admin panel (serves SPA at /admin and API at /admin/api/*)

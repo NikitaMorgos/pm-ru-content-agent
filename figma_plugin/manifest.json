@@ -6,13 +6,8 @@
   "ui": "ui.html",
   "editorType": ["figma"],
   "networkAccess": {
-    "allowedDomains": [
-      "https://pm-ru-content-agent-production.up.railway.app",
-      "https://cloud-api.yandex.net",
-      "https://downloader.disk.yandex.ru"
-    ],
-    "devAllowedDomains": [
-      "http://localhost:8001"
-    ]
+    "allowedDomains": ["*"],
+    "reasoning": "Connects to PM-RU Content Agent backend server to fetch and submit rendering jobs",
+    "devAllowedDomains": ["http://localhost:8001"]
   }
 }

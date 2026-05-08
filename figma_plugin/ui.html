@@ -113,7 +113,6 @@ async function connect() {
   try {
     const r = await fetch(`${SERVER}/health`, {
       method: 'GET',
-      mode: 'cors',
       credentials: 'omit',
       cache: 'no-cache',
     });
