@@ -15,6 +15,7 @@ RUN pip install --no-cache-dir \
     "pydantic>=2.7.0" \
     "pydantic-settings>=2.3.0" \
     "httpx>=0.27.0" \
+    "python-multipart>=0.0.9" \
     "Pillow>=10.4.0" \
     "structlog>=24.2.0" \
     "celery[redis]>=5.4.0" \
