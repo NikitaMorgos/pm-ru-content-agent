@@ -6,8 +6,10 @@
   "ui": "ui.html",
   "editorType": ["figma"],
   "networkAccess": {
-    "allowedDomains": ["*"],
-    "reasoning": "Connects to PM-RU Content Agent backend server to fetch and submit rendering jobs",
+    "allowedDomains": [
+      "https://pm-ru-content-agent-production.up.railway.app"
+    ],
+    "reasoning": "Connects to PM-RU Content Agent backend to fetch rendering jobs and upload slide results",
     "devAllowedDomains": ["http://localhost:8001"]
   }
 }
