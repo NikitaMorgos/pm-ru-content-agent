@@ -8,9 +8,11 @@
   "networkAccess": {
     "allowedDomains": [
       "https://pm-ru-content-agent-production.up.railway.app",
-      "http://localhost:8001",
       "https://cloud-api.yandex.net",
       "https://downloader.disk.yandex.ru"
+    ],
+    "devAllowedDomains": [
+      "http://localhost:8001"
     ]
   }
 }
