@@ -1,487 +1,58 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-<meta charset="utf-8"/>
-<title>PM-RU Content Agent</title>
+<meta charset="utf-8">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; font-size: 12px; }
-  body { background: #f5f5f5; color: #111; }
-
-  .header {
-    background: #1e2d6b; color: #fff; padding: 10px 14px;
-    display: flex; align-items: center; gap: 8px;
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1e2d6b; }
+  #loading {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: #fff; font-family: system-ui, sans-serif; gap: 10px;
   }
-  .header h1 { font-size: 13px; font-weight: 600; }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #f87171; flex-shrink: 0; }
-  .dot.ok { background: #34d399; }
-
-  .section { padding: 10px 14px; border-bottom: 1px solid #e5e7eb; }
-  .section label { font-weight: 600; color: #374151; margin-bottom: 4px; display: block; }
-  .row { display: flex; gap: 6px; align-items: center; }
-  input[type=text] {
-    flex: 1; border: 1px solid #d1d5db; border-radius: 4px; padding: 5px 8px;
-    font-size: 11px; background: #fff;
+  #loading span { font-size: 12px; opacity: 0.7; }
+  .spinner {
+    width: 24px; height: 24px; border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin 0.8s linear infinite;
   }
-  button {
-    border: none; border-radius: 4px; padding: 6px 12px; cursor: pointer;
-    font-size: 11px; font-weight: 600; transition: opacity .15s;
-  }
-  button:disabled { opacity: .4; cursor: default; }
-  .btn-primary { background: #1e2d6b; color: #fff; }
-  .btn-primary:hover:not(:disabled) { background: #162259; }
-  .btn-success { background: #059669; color: #fff; }
-  .btn-success:hover:not(:disabled) { background: #047857; }
-  .btn-sm { padding: 4px 8px; font-size: 10px; }
-
-  #jobs-list { padding: 8px 14px; max-height: 340px; overflow-y: auto; }
-  .job-card {
-    background: #fff; border: 1px solid #e5e7eb; border-radius: 6px;
-    padding: 8px 10px; margin-bottom: 8px;
-  }
-  .job-card .job-title { font-weight: 600; font-size: 12px; color: #111; }
-  .job-card .job-meta { color: #6b7280; font-size: 10px; margin: 2px 0 6px; }
-  .job-card .job-actions { display: flex; gap: 6px; align-items: center; }
-  .badge {
-    display: inline-block; border-radius: 99px; padding: 1px 7px;
-    font-size: 10px; font-weight: 600;
-  }
-  .badge-pending  { background: #fef3c7; color: #92400e; }
-  .badge-running  { background: #dbeafe; color: #1e40af; }
-  .badge-done     { background: #d1fae5; color: #065f46; }
-  .badge-error    { background: #fee2e2; color: #991b1b; }
-
-  .progress-log {
-    background: #111; color: #a3e635; font-family: monospace; font-size: 10px;
-    padding: 8px 10px; max-height: 120px; overflow-y: auto;
-    border-top: 2px solid #1e2d6b;
-  }
-  .progress-log p { line-height: 1.6; }
-  .progress-log .err { color: #f87171; }
-  .progress-log .ok  { color: #34d399; }
-
-  .empty { text-align: center; color: #9ca3af; padding: 24px; font-size: 11px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  iframe { width: 100%; height: 100%; border: none; display: none; }
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="dot" id="conn-dot"></div>
-  <h1>PM-RU Content Agent</h1>
+<div id="loading">
+  <div class="spinner"></div>
+  <span>Загрузка интерфейса...</span>
 </div>
-
-<div class="section">
-  <label>Сервер</label>
-  <div class="row">
-    <input type="text" id="server-url" value="https://pm-ru-content-agent-production.up.railway.app"/>
-    <button class="btn-primary" onclick="connect()">Подключить</button>
-  </div>
-</div>
-
-<div class="section">
-  <div class="row" style="justify-content: space-between; margin-bottom: 6px;">
-    <label style="margin:0">Задания (<span id="jobs-count">0</span>)</label>
-    <div class="row">
-      <button class="btn-primary btn-sm" onclick="fetchJobs()">↻ Обновить</button>
-      <button class="btn-success" id="btn-process-all" onclick="processAll()" disabled>▶ Обработать все</button>
-    </div>
-  </div>
-  <div id="jobs-list"><div class="empty">Нажмите «Подключить»</div></div>
-</div>
-
-<div class="progress-log" id="log"><p>Лог событий...</p></div>
+<iframe id="frame"
+  src="https://pm-ru-content-agent-production.up.railway.app/admin/plugin-ui">
+</iframe>
 
 <script>
-let SERVER = 'https://pm-ru-content-agent-production.up.railway.app';
-let registry = null;
-let jobs = [];
-let processing = false;
+const frame = document.getElementById('frame');
+const loading = document.getElementById('loading');
 
-// ── Log ────────────────────────────────────────────────────────────────────
-function log(msg, cls='') {
-  const el = document.getElementById('log');
-  const p = document.createElement('p');
-  if (cls) p.className = cls;
-  p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-  el.appendChild(p);
-  el.scrollTop = el.scrollHeight;
-}
+frame.addEventListener('load', () => {
+  loading.style.display = 'none';
+  frame.style.display = 'block';
+});
 
-// ── Server connection ──────────────────────────────────────────────────────
-async function connect() {
-  SERVER = document.getElementById('server-url').value.trim();
-  log(`Подключаюсь к ${SERVER}...`);
-  try {
-    const r = await fetch(`${SERVER}/health`, {
-      method: 'GET',
-      credentials: 'omit',
-      cache: 'no-cache',
-    });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    document.getElementById('conn-dot').className = 'dot ok';
-    log('Сервер доступен ✓', 'ok');
-    await fetchRegistry();
-    await fetchJobs();
-  } catch(e) {
-    // More detail: try XHR to distinguish CORS from network errors
-    log(`fetch error: ${e.message || e}`, 'err');
-    try {
-      await new Promise((res, rej) => {
-        const x = new XMLHttpRequest();
-        x.open('GET', `${SERVER}/health`);
-        x.onload = () => res(x.responseText);
-        x.onerror = () => rej(new Error(`XHR error, status=${x.status}, readyState=${x.readyState}`));
-        x.send();
-      });
-      log('XHR работает, проблема в fetch mode', 'ok');
-    } catch(xe) {
-      log(`XHR тоже не работает: ${xe.message}`, 'err');
-      log('Возможная причина: сайт не даёт CORS или нет доступа к сети из плагина', 'err');
-    }
-    document.getElementById('conn-dot').className = 'dot';
-  }
-}
+frame.addEventListener('error', () => {
+  loading.innerHTML = '<span style="color:#f87171">Не удалось загрузить интерфейс.<br>Проверьте соединение.</span>';
+});
 
-async function fetchRegistry() {
-  try {
-    const r = await fetch(`${SERVER}/admin/api/registry`);
-    registry = await r.json();
-    log(`Реестр шаблонов загружен (${Object.keys(registry).filter(k=>!k.startsWith('_')).join(', ')})`, 'ok');
-  } catch(e) {
-    log(`Реестр недоступен: ${e}`, 'err');
-  }
-}
-
-// ── Jobs ───────────────────────────────────────────────────────────────────
-async function fetchJobs() {
-  try {
-    const r = await fetch(`${SERVER}/admin/api/jobs`);
-    jobs = await r.json();
-    renderJobs();
-  } catch(e) {
-    log(`Ошибка загрузки заданий: ${e}`, 'err');
-  }
-}
-
-function renderJobs() {
-  const el = document.getElementById('jobs-list');
-  document.getElementById('jobs-count').textContent = jobs.length;
-  document.getElementById('btn-process-all').disabled = jobs.length === 0 || !registry;
-
-  if (!jobs.length) {
-    el.innerHTML = '<div class="empty">Нет заданий</div>';
-    return;
-  }
-  el.innerHTML = jobs.map(j => {
-    const tz = j.tz || {};
-    const brand = tz.brand || j.brand || '';
-    const name  = tz.product_name || j.product_name || '';
-    const art   = tz.article || j.article || '?';
-    const cat   = tz.category || j.category || '?';
-    const vnt   = tz.variant  || j.variant  || '';
-    return `
-    <div class="job-card" id="card-${j.id}">
-      <div class="job-title">${brand} ${name}</div>
-      <div class="job-meta">арт. ${art} · ${cat}${vnt ? ' · ' + vnt : ''}</div>
-      <div class="job-actions">
-        <span class="badge badge-${j.state}">${stateLabel(j.state)}</span>
-        <button class="btn-success btn-sm" onclick="processJob('${j.id}')">▶ Figma-рендер</button>
-        ${j.state==='done' ? `<span style="color:#059669;font-size:10px">✓ ${(j.result_urls||[]).length} сл.</span>` : ''}
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function stateLabel(s) {
-  return {pending:'Ожидание',running:'В работе',done:'Готово',error:'Ошибка'}[s] || s;
-}
-
-// ── Process all pending ────────────────────────────────────────────────────
-async function processAll() {
-  const pending = jobs.filter(j => j.state === 'pending' || j.state === 'error');
-  log(`Запускаю обработку ${pending.length} заданий...`);
-  for (const job of pending) {
-    await processJob(job.id);
-  }
-}
-
-// ── Process one job ────────────────────────────────────────────────────────
-async function processJob(jobId) {
-  if (processing) { log('Уже выполняется обработка, подождите...'); return; }
-  if (!registry) { log('Реестр шаблонов не загружен', 'err'); return; }
-
-  const job = jobs.find(j => j.id === jobId);
-  if (!job) { log(`Задание ${jobId} не найдено`, 'err'); return; }
-
-  const tz = job.tz || job;
-  const category = tz.category;
-  const article  = tz.article;
-  const brand    = tz.brand;
-  const variant  = tz.variant || '';
-
-  processing = true;
-  document.getElementById('btn-process-all').disabled = true;
-  log(`─── Начинаю задание: ${brand} ${article} (${category}) ───`);
-
-  const catConfig = registry[category];
-  if (!catConfig) {
-    log(`Нет конфига для категории "${category}"`, 'err');
-    processing = false;
-    return;
-  }
-
-  const textValues = buildTextValues(job);
-  const slides = catConfig.slides;
-  const requiredSlides = Object.entries(slides).filter(([, cfg]) => cfg.required);
-  const frameIds = requiredSlides.map(([, cfg]) => cfg.frame_id);
-  const orderedFrameIds = await getSlideOrderInFigma(job.id, frameIds);
-  const orderMap = new Map(orderedFrameIds.map((id, idx) => [id, idx]));
-  const orderedRequired = requiredSlides.sort((a, b) => {
-    const ai = orderMap.has(a[1].frame_id) ? orderMap.get(a[1].frame_id) : Number.MAX_SAFE_INTEGER;
-    const bi = orderMap.has(b[1].frame_id) ? orderMap.get(b[1].frame_id) : Number.MAX_SAFE_INTEGER;
-    return ai - bi;
-  });
-  log(`Порядок слайдов синхронизирован с Figma (${orderedRequired.length})`, 'ok');
-
-  // Missing-only mode: do not re-render already uploaded required slides.
-  const doneSlideTypes = new Set();
-  for (const path of (job.result_urls || [])) {
-    const m = String(path).match(/_([a-z_]+)\.png$/);
-    if (m) doneSlideTypes.add(m[1]);
-  }
-  const selectedSlides = orderedRequired.filter(([slideType]) => !doneSlideTypes.has(slideType));
-  if (selectedSlides.length === 0) {
-    log(`Все обязательные слайды уже готовы (${orderedRequired.length}/${orderedRequired.length})`, 'ok');
-    processing = false;
-    document.getElementById('btn-process-all').disabled = false;
-    await fetchJobs();
-    return;
-  }
-  log(`Рендерю недостающие слайды: ${selectedSlides.length}/${orderedRequired.length}`, 'ok');
-
-  await cleanupJobFrames(job.id);
-
-  const resultUrls = [];
-  const failedSlides = [];
-  for (const [slideType, slideConfig] of selectedSlides) {
-    const idx = orderedRequired.findIndex(([t]) => t === slideType) + 1;
-    log(`  Слайд: ${slideConfig.label || slideType}...`);
-    const nodeValues = {};
-    for (const [field, nodeId] of Object.entries(slideConfig.fill_map || {})) {
-      if (textValues[field]) nodeValues[nodeId] = textValues[field];
-    }
-    let photoBytes = null;
-    const folderUrl = tz.photo_folder_url;
-    if (folderUrl) {
-      try {
-        photoBytes = await downloadPhotoForSlide(folderUrl, variant, slideType, category);
-      } catch(e) {
-        log(`  фото ${slideType}: ${e.message || e}`, 'err');
-      }
-    }
-
-    let bytes = await processSlideInFigma({
-      jobId: job.id, slideType,
-      frameId: slideConfig.frame_id,
-      textValues: nodeValues,
-      photoBytes,
-    });
-    if (!bytes) {
-      log(`  ↻ retry ${slideType}...`, 'err');
-      const isHeavy = slideType === 'upholstery_material' || slideType === 'legs_material';
-      if (isHeavy) {
-        log(`  ↻ ${slideType}: fallback без фото`, 'err');
-      }
-      bytes = await processSlideInFigma({
-        jobId: job.id, slideType,
-        frameId: slideConfig.frame_id,
-        textValues: nodeValues,
-        photoBytes: isHeavy ? null : photoBytes,
-      });
-    }
-    if (bytes) {
-      const url = await uploadSlide(job.id, slideType, bytes, idx);
-      if (url) { resultUrls.push(url); log(`  ✓ ${slideType}`, 'ok'); }
-      else { failedSlides.push(slideType); }
-    } else {
-      failedSlides.push(slideType);
+// Bridge: forward messages between Figma sandbox and Railway iframe
+window.addEventListener('message', (e) => {
+  if (e.source === frame.contentWindow) {
+    // Railway iframe → Figma
+    parent.postMessage(e.data, '*');
+  } else {
+    // Figma → Railway iframe
+    if (frame.contentWindow) {
+      frame.contentWindow.postMessage(e.data, '*');
     }
   }
-
-  if (failedSlides.length) {
-    log(`⚠ Пропущены слайды: ${failedSlides.join(', ')}`, 'err');
-  }
-  log(`─── Готово: ${resultUrls.length}/${selectedSlides.length} новых слайдов ───`, 'ok');
-  processing = false;
-  document.getElementById('btn-process-all').disabled = false;
-  await fetchJobs();
-}
-
-// ── Figma bridge (promise wrapper) ────────────────────────────────────────
-function processSlideInFigma({ jobId, slideType, frameId, textValues, photoBytes }) {
-  return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
-      window.removeEventListener('message', handler);
-      log(`  ⚠ ${slideType}: таймаут 300с, пропускаю`, 'err');
-      resolve(null);
-    }, 300000);
-
-    const stepLabels = { fonts:'шрифты', clone:'клон', text:'текст', photo:'фото', export:'экспорт' };
-    function handler(event) {
-      const msg = event.data.pluginMessage || event.data;
-      if (!msg) return;
-      if (msg.type === 'slide-progress' && msg.jobId === jobId && msg.slideType === slideType) {
-        log(`  → ${slideType}: ${stepLabels[msg.step] || msg.step}...`);
-        return;
-      }
-      if ((msg.type === 'slide-done' || msg.type === 'slide-error') &&
-          msg.jobId === jobId && msg.slideType === slideType) {
-        clearTimeout(timeout);
-        window.removeEventListener('message', handler);
-        if (msg.type === 'slide-error') {
-          log(`  ✗ ${slideType}: ${msg.error}`, 'err');
-          resolve(null);
-        } else {
-          resolve(new Uint8Array(msg.bytes));
-        }
-      }
-    }
-    window.addEventListener('message', handler);
-
-    parent.postMessage({
-      pluginMessage: {
-        type: 'process-slide',
-        jobId, slideType, frameId, textValues,
-        photoBytes: photoBytes ? Array.from(photoBytes) : null,
-      }
-    }, '*');
-  });
-}
-
-// ── Upload slide PNG to server ─────────────────────────────────────────────
-async function uploadSlide(jobId, slideType, bytes, slideIndex) {
-  try {
-    const blob = new Blob([bytes], { type: 'image/png' });
-    const fd = new FormData();
-    fd.append('file', blob, `${slideType}.png`);
-    fd.append('slide_type', slideType);
-    fd.append('slide_index', String(slideIndex || 1));
-
-    const r = await fetch(`${SERVER}/admin/api/jobs/${jobId}/slides`, {
-      method: 'POST', body: fd,
-    });
-    if (!r.ok) throw new Error(r.status);
-    const data = await r.json();
-    return data.path || null;
-  } catch(e) {
-    log(`  Upload error (${slideType}): ${e}`, 'err');
-    return null;
-  }
-}
-
-// ── Download photo via server proxy ───────────────────────────────────────
-async function downloadPhotoForSlide(folderUrl, variant, slideType, category) {
-  const isHeavy = slideType === 'upholstery_material' || slideType === 'legs_material';
-  const params = new URLSearchParams({
-    folder_url: folderUrl,
-    variant,
-    slide_type: slideType,
-    category,
-    max_side: isHeavy ? '1400' : '0',
-  });
-  const r = await fetch(`${SERVER}/admin/api/photo-pick?${params}`);
-  if (!r.ok) throw new Error(`photo-pick ${r.status}`);
-  const buf = await r.arrayBuffer();
-  return buf.byteLength > 0 ? new Uint8Array(buf) : null;
-}
-
-function getSlideOrderInFigma(jobId, frameIds) {
-  return new Promise((resolve) => {
-    const fallback = [...frameIds];
-    const timeout = setTimeout(() => {
-      window.removeEventListener('message', handler);
-      resolve(fallback);
-    }, 3000);
-    function handler(event) {
-      const msg = event.data.pluginMessage || event.data;
-      if (!msg) return;
-      if (msg.type === 'slide-order' && msg.jobId === jobId) {
-        clearTimeout(timeout);
-        window.removeEventListener('message', handler);
-        resolve(Array.isArray(msg.order) ? msg.order : fallback);
-      }
-    }
-    window.addEventListener('message', handler);
-    parent.postMessage({ pluginMessage: { type: 'get-slide-order', jobId, frameIds } }, '*');
-  });
-}
-
-function cleanupJobFrames(jobId) {
-  return new Promise((resolve) => {
-    const timeout = setTimeout(() => {
-      window.removeEventListener('message', handler);
-      resolve();
-    }, 2000);
-    function handler(event) {
-      const msg = event.data.pluginMessage || event.data;
-      if (!msg) return;
-      if (msg.type === 'cleanup-job-done' && msg.jobId === jobId) {
-        clearTimeout(timeout);
-        window.removeEventListener('message', handler);
-        resolve();
-      }
-    }
-    window.addEventListener('message', handler);
-    parent.postMessage({ pluginMessage: { type: 'cleanup-job', jobId } }, '*');
-  });
-}
-
-// ── Build text values from job ─────────────────────────────────────────────
-function buildTextValues(job) {
-  const tz = job.tz || job;
-  return {
-    brand:             tz.brand || '',
-    product_title:     tz.product_name || '',
-    product_type:      tz.product_name || '',
-    dimensions_hwl:    [tz.width_cm, tz.depth_cm, tz.height_cm].filter(Boolean).map(v=>v+' см').join(' × '),
-    width_cm:          (tz.width_cm  || '') + ' см',
-    height_cm:         (tz.height_cm || '') + ' см',
-    depth_cm:          (tz.depth_cm  || '') + ' см',
-    seat_height_cm:    (tz.seat_height_cm || '') + ' см',
-    max_load:          tz.max_load || '',
-    fabric_type:       tz.fabric_type || '',
-    fabric_name:       tz.fabric_type || '',
-    frame_material:    tz.frame_material || '',
-    legs_material:     tz.legs_material || '',
-    legs_material_text:tz.legs_material || '',
-    tabletop_material: tz.tabletop_material || '',
-    tabletop_finish:   tz.tabletop_finish || '',
-    tabletop_load:     tz.tabletop_load || '',
-    capacity_text:     tz.capacity_text || '',
-    height_adjustment: tz.height_adjustment || '',
-    backrest:          tz.backrest || '',
-    comfort:           tz.comfort || '',
-    seat_height:       (tz.seat_height_cm || '') + ' см',
-    color_range:       tz.color_range || '',
-    space_saving:      tz.space_saving || '',
-    design_accent:     tz.design_accent || '',
-    utp_assembly:      tz.utp_1 || '',
-    utp_surface:       tz.utp_2 || '',
-    utp_care:          tz.utp_3 || '',
-    utp_support:       tz.utp_1 || '',
-    utp_construction:  tz.utp_2 || '',
-    utp_durability:    tz.utp_1 || '',
-    utp_scratch:       tz.utp_2 || '',
-    utp_washable:      tz.utp_3 || '',
-    utp_feel:          tz.utp_3 || '',
-    utp_universal:     tz.utp_1 || '',
-    utp_label:         tz.utp_2 || '',
-    label:             'Антикоготь',
-    description:       tz.utp_1 || '',
-  };
-}
-
-// ── Init ───────────────────────────────────────────────────────────────────
-window.onload = () => connect();
+});
 </script>
 </body>
 </html>

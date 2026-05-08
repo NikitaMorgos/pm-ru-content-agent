@@ -24,6 +24,7 @@ router = APIRouter()
 logger = structlog.get_logger()
 
 _TEMPLATE_PATH = pathlib.Path(__file__).parent.parent / "templates" / "admin.html"
+_PLUGIN_UI_PATH = pathlib.Path(__file__).parent.parent / "templates" / "plugin_ui.html"
 
 
 # ── Serve SPA ─────────────────────────────────────────────────────────────────
@@ -31,6 +32,12 @@ _TEMPLATE_PATH = pathlib.Path(__file__).parent.parent / "templates" / "admin.htm
 @router.get("/", response_class=HTMLResponse, include_in_schema=False)
 async def serve_admin() -> HTMLResponse:
     return HTMLResponse(_TEMPLATE_PATH.read_text(encoding="utf-8"))
+
+
+@router.get("/plugin-ui", response_class=HTMLResponse, include_in_schema=False)
+async def serve_plugin_ui() -> HTMLResponse:
+    """Serves the Figma plugin UI — loaded remotely by the thin local bridge."""
+    return HTMLResponse(_PLUGIN_UI_PATH.read_text(encoding="utf-8"))
 
 
 # ── Jobs API ──────────────────────────────────────────────────────────────────
