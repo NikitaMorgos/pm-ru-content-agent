@@ -292,6 +292,11 @@ async function processJob(jobId) {
     log(`⚠ Пропущены слайды: ${failedSlides.join(', ')}`, 'err');
   }
   log(`─── Готово: ${resultUrls.length}/${selectedSlides.length} новых слайдов ───`, 'ok');
+
+  // Navigate Figma to the Results page and zoom to this job's frames
+  await zoomToResultsInFigma(job.id);
+  log('📐 Figma переключена на страницу "🤖 Pipeline Results"', 'ok');
+
   processing = false;
   document.getElementById('btn-process-all').disabled = false;
   await fetchJobs();
@@ -311,7 +316,8 @@ function processSlideInFigma({ jobId, slideType, frameId, textValues, photoBytes
       const msg = event.data.pluginMessage || event.data;
       if (!msg) return;
       if (msg.type === 'slide-progress' && msg.jobId === jobId && msg.slideType === slideType) {
-        log(`  → ${slideType}: ${stepLabels[msg.step] || msg.step}...`);
+        const detail = msg.detail ? ` (${msg.detail})` : '';
+        log(`  → ${slideType}: ${stepLabels[msg.step] || msg.step}${detail}`);
         return;
       }
       if ((msg.type === 'slide-done' || msg.type === 'slide-error') &&
@@ -413,6 +419,26 @@ function cleanupJobFrames(jobId) {
     }
     window.addEventListener('message', handler);
     parent.postMessage({ pluginMessage: { type: 'cleanup-job', jobId } }, '*');
+  });
+}
+
+function zoomToResultsInFigma(jobId) {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      window.removeEventListener('message', handler);
+      resolve();
+    }, 5000);
+    function handler(event) {
+      const msg = event.data.pluginMessage || event.data;
+      if (!msg) return;
+      if (msg.type === 'zoom-done') {
+        clearTimeout(timeout);
+        window.removeEventListener('message', handler);
+        resolve();
+      }
+    }
+    window.addEventListener('message', handler);
+    parent.postMessage({ pluginMessage: { type: 'zoom-to-results', jobId } }, '*');
   });
 }
 
