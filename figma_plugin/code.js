@@ -1,7 +1,9 @@
 // PM-RU Content Agent – Figma Plugin (main thread)
+// Thin executor: all business logic lives in plugin_ui.html served from Railway.
+// This file should rarely (ideally never) need to be updated.
 figma.showUI(__html__, { width: 440, height: 640, title: "PM-RU Content Agent" });
 
-// ── Font cache ─────────────────────────────────────────────────────────────
+// ── Font loading ────────────────────────────────────────────────────────────
 const _loadedFonts = new Set();
 
 async function ensureFont(fontName) {
@@ -30,131 +32,37 @@ async function preloadFonts(node) {
   }
 }
 
-// ── Node finding ───────────────────────────────────────────────────────────
-
-// Strategy 1: structural path (index-based) – fast, breaks if structure differs
-function getNodePath(root, target) {
-  if (root.id === target.id) return [];
-  if ("children" in root) {
-    for (let i = 0; i < root.children.length; i++) {
-      const sub = getNodePath(root.children[i], target);
-      if (sub !== null) return [i, ...sub];
+// ── Structural node mapping ─────────────────────────────────────────────────
+// Build a direct template-nodeId → clone-nodeId map.
+// clone() in Figma always produces a perfect structural copy, so parallel
+// traversal is 100% reliable — no search/fallback strategies needed.
+function buildNodeMap(templateNode, cloneNode, map) {
+  if (!map) map = {};
+  map[templateNode.id] = cloneNode.id;
+  if ("children" in templateNode && "children" in cloneNode) {
+    const len = Math.min(templateNode.children.length, cloneNode.children.length);
+    for (let i = 0; i < len; i++) {
+      buildNodeMap(templateNode.children[i], cloneNode.children[i], map);
     }
   }
-  return null;
+  return map;
 }
 
-function getNodeAtPath(root, path) {
-  let node = root;
-  for (const idx of path) {
-    if (!("children" in node) || idx >= node.children.length) return null;
-    node = node.children[idx];
-  }
-  return node;
-}
-
-// Strategy 2: name-based deep search – robust fallback
-function findNodeByName(root, name) {
-  if (root.name === name) return root;
-  if ("children" in root) {
-    for (const child of root.children) {
-      const found = findNodeByName(child, name);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-// Strategy 3: node ID suffix match – handles component copies
-function findNodeByIdSuffix(root, originalId) {
-  // In clones, node IDs are remapped but retain the same suffix pattern
-  // e.g. original "4:2343" → clone "123:2343"
-  const suffix = ':' + originalId.split(':')[1];
+// ── Image utilities ─────────────────────────────────────────────────────────
+function findLargestImageNode(frame) {
+  let target = null, maxArea = 0;
   function walk(n) {
-    if (n.id && n.id.endsWith(suffix)) return n;
-    if ("children" in n) {
-      for (const child of n.children) {
-        const r = walk(child);
-        if (r) return r;
-      }
-    }
-    return null;
-  }
-  return walk(root);
-}
-
-// Combined: try path → id-suffix → name
-function findClonedNode(originalFrame, originalNode, clonedFrame) {
-  // Strategy 1: path
-  const path = getNodePath(originalFrame, originalNode);
-  if (path !== null) {
-    const byPath = getNodeAtPath(clonedFrame, path);
-    if (byPath) return byPath;
-  }
-  // Strategy 2: id suffix (cloned nodes share the local part of id)
-  const bySuffix = findNodeByIdSuffix(clonedFrame, originalNode.id);
-  if (bySuffix) return bySuffix;
-  // Strategy 3: name (last resort)
-  if (originalNode.name) {
-    const byName = findNodeByName(clonedFrame, originalNode.name);
-    if (byName) return byName;
-  }
-  return null;
-}
-
-// ── Image replacement ──────────────────────────────────────────────────────
-
-function findImageNodes(frame) {
-  const results = [];
-  function walk(n) {
-    if ("fills" in n) {
-      const imgFills = n.fills.filter(f => f.type === "IMAGE");
-      if (imgFills.length > 0) results.push(n);
+    if ("fills" in n && Array.isArray(n.fills) && n.fills.some(f => f.type === "IMAGE")) {
+      const area = (n.width || 0) * (n.height || 0);
+      if (area > maxArea) { target = n; maxArea = area; }
     }
     if ("children" in n) n.children.forEach(walk);
   }
   walk(frame);
-  results.sort((a, b) => (b.width * b.height) - (a.width * a.height));
-  return results;
+  return target;
 }
 
-async function replaceMainPhoto(frame, imageBytes) {
-  const imgNodes = findImageNodes(frame);
-  if (!imgNodes.length) return false;
-  const target = imgNodes[0];
-  const figmaImg = figma.createImage(new Uint8Array(imageBytes));
-  const fills = JSON.parse(JSON.stringify(target.fills));
-  const idx = fills.findIndex(f => f.type === "IMAGE");
-  if (idx >= 0) {
-    fills[idx] = { type: "IMAGE", scaleMode: "FILL", imageHash: figmaImg.hash };
-    target.fills = fills;
-    return true;
-  }
-  return false;
-}
-
-// Mark image node with visible "no photo" indicator
-function markPhotoMissing(frame) {
-  const imgNodes = findImageNodes(frame);
-  if (!imgNodes.length) return;
-  const target = imgNodes[0];
-  // Red semi-transparent overlay
-  target.fills = [{ type: "SOLID", color: { r: 1, g: 0.2, b: 0.2 }, opacity: 0.3 }];
-}
-
-async function exportWithTimeout(frame, scaleValue, timeoutMs) {
-  const exportPromise = frame.exportAsync({
-    format: "PNG",
-    constraint: { type: "SCALE", value: scaleValue },
-  });
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error(`export timeout (${timeoutMs}ms)`)), timeoutMs);
-  });
-  return Promise.race([exportPromise, timeoutPromise]);
-}
-
-// ── Results page ───────────────────────────────────────────────────────────
-
+// ── Results page ────────────────────────────────────────────────────────────
 function getOrCreateResultsPage() {
   let page = figma.root.children.find(p => p.name === "🤖 Pipeline Results");
   if (!page) {
@@ -164,10 +72,10 @@ function getOrCreateResultsPage() {
   return page;
 }
 
-// ── Main handler ───────────────────────────────────────────────────────────
-
+// ── Message handler ─────────────────────────────────────────────────────────
 figma.ui.onmessage = async (msg) => {
 
+  // ── Slide order (for correct sequencing) ──────────────────────────────────
   if (msg.type === "get-slide-order") {
     const frameIds = Array.isArray(msg.frameIds) ? msg.frameIds : [];
     const order = frameIds
@@ -180,6 +88,7 @@ figma.ui.onmessage = async (msg) => {
     return;
   }
 
+  // ── Cleanup job frames ────────────────────────────────────────────────────
   if (msg.type === "cleanup-job") {
     const page = getOrCreateResultsPage();
     const prefix = `${msg.jobId} / `;
@@ -190,7 +99,7 @@ figma.ui.onmessage = async (msg) => {
     return;
   }
 
-  // Navigate Figma viewport to Results page and zoom to fit all frames
+  // ── Zoom to results page ──────────────────────────────────────────────────
   if (msg.type === "zoom-to-results") {
     const page = figma.root.children.find(p => p.name === "🤖 Pipeline Results");
     if (page) {
@@ -199,29 +108,28 @@ figma.ui.onmessage = async (msg) => {
       const frames = prefix
         ? page.children.filter(n => typeof n.name === "string" && n.name.startsWith(prefix))
         : [...page.children];
-      if (frames.length > 0) {
-        figma.viewport.scrollAndZoomIntoView(frames);
-      }
+      if (frames.length > 0) figma.viewport.scrollAndZoomIntoView(frames);
     }
     figma.ui.postMessage({ type: "zoom-done", jobId: msg.jobId });
     return;
   }
 
+  // ── Process one slide ─────────────────────────────────────────────────────
   if (msg.type === "process-slide") {
     const { jobId, slideType, frameId, textValues, photoBytes } = msg;
 
     const templateFrame = figma.getNodeById(frameId);
     if (!templateFrame) {
       figma.ui.postMessage({ type: "slide-error", jobId, slideType,
-        error: `Frame ${frameId} not found in Figma file` });
+        error: `Frame ${frameId} not found in this Figma file` });
       return;
     }
 
-    // Step 1: pre-load fonts
+    // 1. Pre-load fonts
     figma.ui.postMessage({ type: "slide-progress", jobId, slideType, step: "fonts" });
     await preloadFonts(templateFrame);
 
-    // Step 2: clone frame to Results page
+    // 2. Clone to Results page
     figma.ui.postMessage({ type: "slide-progress", jobId, slideType, step: "clone" });
     const resultsPage = getOrCreateResultsPage();
     const workFrame = templateFrame.clone();
@@ -233,35 +141,29 @@ figma.ui.onmessage = async (msg) => {
     workFrame.y = 0;
     resultsPage.appendChild(workFrame);
 
-    // Step 3: fill text (with 3-strategy fallback + logging)
+    // Build structural mapping: template node IDs → clone node IDs
+    const nodeMap = buildNodeMap(templateFrame, workFrame);
+
+    // 3. Fill text nodes
     figma.ui.postMessage({ type: "slide-progress", jobId, slideType, step: "text" });
     let textSet = 0, textFailed = 0;
-    for (const [nodeId, value] of Object.entries(textValues)) {
+    for (const [templateNodeId, value] of Object.entries(textValues || {})) {
       if (!value) continue;
-      const originalNode = figma.getNodeById(nodeId);
-      if (!originalNode) {
+      const cloneNodeId = nodeMap[templateNodeId];
+      if (!cloneNodeId) {
         textFailed++;
-        console.warn(`[text] node not found: ${nodeId}`);
+        console.warn(`[text] no mapping for template node: ${templateNodeId}`);
         continue;
       }
-      const clonedNode = findClonedNode(templateFrame, originalNode, workFrame);
-      if (!clonedNode) {
-        textFailed++;
-        console.warn(`[text] cloned node not found for: ${nodeId} (${originalNode.name})`);
-        continue;
-      }
-      if (clonedNode.type !== "TEXT") {
-        textFailed++;
-        console.warn(`[text] node is not TEXT: ${nodeId}`);
-        continue;
-      }
+      const node = figma.getNodeById(cloneNodeId);
+      if (!node || node.type !== "TEXT") { textFailed++; continue; }
       try {
-        await loadNodeFonts(clonedNode);
-        clonedNode.characters = String(value);
+        await loadNodeFonts(node);
+        node.characters = String(value);
         textSet++;
       } catch(e) {
         textFailed++;
-        console.error(`[text] set failed for ${nodeId}:`, e);
+        console.error(`[text] set failed:`, e);
       }
     }
     figma.ui.postMessage({
@@ -269,38 +171,57 @@ figma.ui.onmessage = async (msg) => {
       step: "text", detail: `${textSet} нодов заполнено, ${textFailed} пропущено`
     });
 
-    // Step 4: replace photo
+    // 4. Replace / mark photo
+    const imgTarget = findLargestImageNode(workFrame);
     if (photoBytes && photoBytes.length) {
       figma.ui.postMessage({ type: "slide-progress", jobId, slideType, step: "photo" });
-      await replaceMainPhoto(workFrame, photoBytes);
+      if (imgTarget) {
+        const figmaImg = figma.createImage(new Uint8Array(photoBytes));
+        const fills = JSON.parse(JSON.stringify(imgTarget.fills));
+        const idx = fills.findIndex(f => f.type === "IMAGE");
+        if (idx >= 0) {
+          fills[idx] = { type: "IMAGE", scaleMode: "FILL", imageHash: figmaImg.hash };
+          imgTarget.fills = fills;
+        }
+      }
     } else {
-      // Mark photo as missing with visible red tint
-      markPhotoMissing(workFrame);
+      if (imgTarget) {
+        imgTarget.fills = [{ type: "SOLID", color: { r: 1, g: 0.2, b: 0.2 }, opacity: 0.3 }];
+      }
       figma.ui.postMessage({
         type: "slide-progress", jobId, slideType,
         step: "photo", detail: "⚠ фото не загружено — красная заливка"
       });
     }
 
-    // Step 5: export
+    // 5. Export
     figma.ui.postMessage({ type: "slide-progress", jobId, slideType, step: "export" });
     try {
       const heavySlide = slideType === "upholstery_material" || slideType === "legs_material";
-      let bytes = await exportWithTimeout(workFrame, heavySlide ? 0.9 : 1, 120000);
+      const scale = heavySlide ? 0.9 : 1;
+      let bytes = await Promise.race([
+        workFrame.exportAsync({ format: "PNG", constraint: { type: "SCALE", value: scale } }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("export timeout 120s")), 120000)),
+      ]);
       if (!bytes || bytes.length === 0) {
-        bytes = await exportWithTimeout(workFrame, 0.75, 120000);
+        bytes = await Promise.race([
+          workFrame.exportAsync({ format: "PNG", constraint: { type: "SCALE", value: 0.75 } }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("export timeout 120s")), 120000)),
+        ]);
       }
-      figma.ui.postMessage({ type: "slide-done", jobId, slideType,
-        bytes: Array.from(bytes) });
+      figma.ui.postMessage({ type: "slide-done", jobId, slideType, bytes: Array.from(bytes) });
     } catch(e) {
       figma.ui.postMessage({ type: "slide-error", jobId, slideType, error: String(e) });
     }
+    return;
   }
 
+  // ── Full cleanup ──────────────────────────────────────────────────────────
   if (msg.type === "cleanup") {
     const page = figma.root.children.find(p => p.name === "🤖 Pipeline Results");
     if (page) { page.children.forEach(n => n.remove()); }
     figma.ui.postMessage({ type: "cleanup-done" });
+    return;
   }
 
   if (msg.type === "close") figma.closePlugin();
