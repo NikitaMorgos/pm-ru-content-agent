@@ -1,7 +1,10 @@
 // PM-RU Content Agent – Figma Plugin (main thread)
 // Thin executor: all business logic lives in plugin_ui.html served from Railway.
 // This file should rarely (ideally never) need to be updated.
+const PLUGIN_VERSION = "v3-buildnodemap-2026-05-20";
 figma.showUI(__html__, { width: 440, height: 640, title: "PM-RU Content Agent" });
+// Send version to UI immediately so it can report it to the server
+figma.ui.postMessage({ type: "plugin-version", version: PLUGIN_VERSION });
 
 // ── Font loading ────────────────────────────────────────────────────────────
 const _loadedFonts = new Set();
@@ -170,6 +173,20 @@ figma.ui.onmessage = async (msg) => {
     figma.ui.postMessage({
       type: "slide-progress", jobId, slideType,
       step: "text", detail: `${textSet} нодов заполнено, ${textFailed} пропущено`
+    });
+    // Telemetry — sent regardless of whether anything was written, so we can see
+    // on the server whether the plugin is doing what we expect.
+    figma.ui.postMessage({
+      type: "telemetry", jobId, slideType,
+      data: {
+        version: PLUGIN_VERSION,
+        frameId,
+        nodeMapSize: Object.keys(nodeMap).length,
+        textSet, textFailed,
+        textValuesCount: Object.keys(textValues || {}).length,
+        templateChildren: ("children" in templateFrame) ? templateFrame.children.length : 0,
+        cloneChildren: ("children" in workFrame) ? workFrame.children.length : 0,
+      }
     });
 
     // 4. Replace / mark photo — applies to ALL image-fill nodes in the frame

@@ -664,10 +664,78 @@ function renderJobCard(job) {
 
       <div class="flex items-center justify-between mt-3 pt-3 border-t border-slate-50">
         <span class="text-xs text-slate-400">${job.created_at}</span>
-        <button onclick="showJobDetail('${job.id}')" class="text-xs text-brand-500 hover:text-brand-700 font-medium">Подробнее →</button>
+        <div class="flex items-center gap-3">
+          <button onclick="showDryRun('${job.id}')"
+            class="text-xs text-purple-600 hover:text-purple-800 font-medium">
+            🔍 Dry-run (что будет в слайдах)
+          </button>
+          <button onclick="showJobDetail('${job.id}')" class="text-xs text-brand-500 hover:text-brand-700 font-medium">Подробнее →</button>
+        </div>
       </div>
     </div>
   `;
+}
+
+// ── Dry-run viewer ─────────────────────────────────────────────────────────
+async function showDryRun(jobId) {
+  try {
+    const r = await fetch(`/admin/api/jobs/${jobId}/dry-run`);
+    if (!r.ok) {
+      alert(`Ошибка: HTTP ${r.status}`);
+      return;
+    }
+    const d = await r.json();
+    const inv = d.photo_inventory || {};
+    const invLines = [
+      `белый-фронт : ${inv.white_front || '(нет)'}`,
+      `белый-3/4   : ${inv.white_34 || '(нет)'}`,
+      `белый-сбоку : ${inv.white_side || '(нет)'}`,
+      `интерьер    : ${(inv.interior || []).length} файлов`,
+      `макро       : ${(inv.macro || []).length} файлов`,
+    ].join('\n');
+
+    const photoLines = Object.entries(d.photo_plan || {}).map(([slide, info]) =>
+      `  ${slide.padEnd(22)} → ${info.filename || '(ПУСТО)'}`
+    ).join('\n');
+
+    const textLines = Object.entries(d.text_plan || {}).map(([slide, fields]) => {
+      const rows = fields.map(f => {
+        const mark = f.empty ? '✗' : '✓';
+        return `    ${mark} ${f.field.padEnd(22)} node=${f.node_id.padEnd(10)} = ${JSON.stringify(f.value)}`;
+      }).join('\n');
+      return `\n  ▸ ${slide}\n${rows}`;
+    }).join('');
+
+    const gaps = Object.keys(d.gaps || {}).length === 0
+      ? '(нет — все поля заполнены)'
+      : Object.entries(d.gaps).map(([s, fs]) => `  ${s}: ${fs.join(', ')}`).join('\n');
+
+    const body = `
+=== DRY-RUN для задания #${jobId} ===
+
+Бренд:    ${d.tz_summary.brand}
+Товар:    ${d.tz_summary.product_name}
+Вариант:  ${d.tz_summary.variant}
+Артикул:  ${d.tz_summary.article}
+
+─── ФОТО в папке Yandex Disk ───
+${invLines}
+
+─── Какое фото выберется для каждого слайда ───
+${photoLines}
+
+─── Какой текст подставится в каждую ноду ───${textLines}
+
+─── ПРОПУЩЕННЫЕ ПОЛЯ (нет значения в ТЗ) ───
+${gaps}
+`;
+    // Display in a modal-like prompt
+    const w = window.open('', '_blank', 'width=900,height=700');
+    w.document.write(`<pre style="font:12px/1.5 'JetBrains Mono', Consolas, monospace; padding:24px; background:#0f172a; color:#e2e8f0; min-height:100%;">${body.replace(/</g,'&lt;')}</pre>`);
+    w.document.title = `Dry-run #${jobId}`;
+  } catch (e) {
+    alert('Ошибка dry-run: ' + e.message);
+  }
 }
 
 // ── Job detail modal ──────────────────────────────────────────────────────────

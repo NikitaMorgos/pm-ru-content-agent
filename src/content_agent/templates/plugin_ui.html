@@ -95,6 +95,30 @@ let SERVER = '';
 let registry = null;
 let jobs = [];
 let processing = false;
+let pluginVersion = '(unknown)';
+
+// Listen for plugin version announcement and telemetry from code.js
+window.addEventListener('message', (event) => {
+  const msg = event.data.pluginMessage || event.data;
+  if (!msg || !msg.type) return;
+  if (msg.type === 'plugin-version') {
+    pluginVersion = msg.version;
+    log(`Plugin code.js version: ${pluginVersion}`, 'ok');
+    return;
+  }
+  if (msg.type === 'telemetry') {
+    // Fire-and-forget POST to server
+    fetch('/admin/api/plugin-telemetry', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jobId: msg.jobId,
+        slideType: msg.slideType,
+        data: msg.data,
+      }),
+    }).catch(()=>{});
+  }
+});
 
 // ── Log ────────────────────────────────────────────────────────────────────
 function log(msg, cls='') {

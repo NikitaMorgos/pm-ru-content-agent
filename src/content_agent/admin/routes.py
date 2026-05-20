@@ -134,6 +134,32 @@ async def upload_slide(
     })
 
 
+@router.post("/api/plugin-telemetry")
+async def plugin_telemetry(payload: dict) -> JSONResponse:
+    """
+    Receive telemetry from the Figma plugin after each slide render.
+    Used to verify what version of code.js is actually running on Nika's machine
+    and what nodeMap/text-write counts the plugin reports.
+    Persists last 20 entries on the job's feedback_notes.
+    """
+    job_id = payload.get("jobId")
+    if not job_id:
+        return JSONResponse({"ok": False, "error": "no jobId"}, status_code=400)
+    job = get_job(job_id)
+    if not job:
+        return JSONResponse({"ok": False, "error": "job not found"}, status_code=404)
+    line = (
+        f"[telemetry] slide={payload.get('slideType')} "
+        f"data={json.dumps(payload.get('data', {}), ensure_ascii=False)}"
+    )
+    logger.info("plugin.telemetry", job_id=job_id, **payload.get("data", {}),
+                slide_type=payload.get("slideType"))
+    notes = list(job.feedback_notes or [])
+    notes.append(line)
+    update_job(job_id, feedback_notes=notes[-20:])
+    return JSONResponse({"ok": True})
+
+
 @router.post("/api/jobs/{job_id}/feedback")
 async def add_job_feedback(job_id: str, note: str = Form(...)) -> JSONResponse:
     """Store checkpoint feedback notes from reviewers."""
@@ -210,6 +236,146 @@ def _count_done_required_slides(job: "AdminJob", urls: list[str]) -> int:
 async def get_registry() -> JSONResponse:
     """Serve template_registry.json to the Figma plugin."""
     return JSONResponse(_load_template_registry())
+
+
+@router.get("/api/jobs/{job_id}/dry-run")
+async def dry_run_job(job_id: str) -> JSONResponse:
+    """
+    Pre-flight check: shows what photos and text values WOULD be used for each
+    slide if Nika triggered the render now. Closes the feedback loop without
+    requiring Figma to be open.
+    """
+    job = get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    tz = job.tz
+    registry = _load_template_registry()
+    cat_cfg = registry.get(tz.category, {})
+    slides = cat_cfg.get("slides", {})
+
+    # ── Photo plan ─────────────────────────────────────────────────────────
+    from content_agent.integrations.yadisk import pick_photos
+    photo_plan: dict = {}
+    try:
+        photos = pick_photos(tz.photo_folder_url, tz.variant or "")
+        photo_inventory = {
+            "white_front": _filename_from_url(photos.white_front),
+            "white_34":    _filename_from_url(photos.white_34),
+            "white_side":  _filename_from_url(photos.white_side),
+            "interior":    [_filename_from_url(u) for u in photos.interior],
+            "macro":       [_filename_from_url(u) for u in photos.macro],
+        }
+        for slide_type, cfg in slides.items():
+            if not cfg.get("required"):
+                continue
+            url = photos.slide_photo(slide_type=slide_type, category=tz.category)
+            photo_plan[slide_type] = {
+                "filename": _filename_from_url(url),
+                "url": url,
+            }
+    except Exception as exc:
+        photo_inventory = {"error": str(exc)}
+
+    # ── Text plan ──────────────────────────────────────────────────────────
+    text_values = _build_text_values_mirror(tz)
+    text_plan: dict = {}
+    gaps: dict = {}
+    for slide_type, cfg in slides.items():
+        if not cfg.get("required"):
+            continue
+        fill_map = cfg.get("fill_map", {})
+        slide_text: list[dict] = []
+        for field, node_id in fill_map.items():
+            value = text_values.get(field, "")
+            slide_text.append({
+                "field": field,
+                "node_id": node_id,
+                "value": value,
+                "empty": not bool(value),
+            })
+            if not value:
+                gaps.setdefault(slide_type, []).append(field)
+        text_plan[slide_type] = slide_text
+
+    return JSONResponse({
+        "job_id": job.id,
+        "tz_summary": {
+            "brand": tz.brand,
+            "product_name": tz.product_name,
+            "variant": tz.variant,
+            "article": tz.article,
+            "category": tz.category,
+            "photo_folder_url": tz.photo_folder_url,
+        },
+        "photo_inventory": photo_inventory,
+        "photo_plan": photo_plan,
+        "text_plan": text_plan,
+        "gaps": gaps,
+    })
+
+
+def _filename_from_url(url: str) -> str:
+    if not url:
+        return ""
+    try:
+        from urllib.parse import urlparse, parse_qs
+        parsed = urlparse(url)
+        qs = parse_qs(parsed.query)
+        if "filename" in qs:
+            return qs["filename"][0]
+        return parsed.path.rsplit("/", 1)[-1]
+    except Exception:
+        return url[:60]
+
+
+def _build_text_values_mirror(tz) -> dict:
+    """Mirror of buildTextValues() from plugin_ui.html — must stay in sync."""
+    def with_cm(v):
+        s = str(v) if v not in ("", None) else ""
+        return f"{s} см" if s else ""
+    return {
+        "brand":             tz.brand or "",
+        "product_title":     tz.product_name or "",
+        "product_type":      tz.product_name or "",
+        "product_name":      tz.product_name or "",
+        "dimensions_hwl":    " × ".join(
+            f"{v} см" for v in (tz.width_cm, tz.depth_cm, tz.height_cm) if v
+        ),
+        "width_cm":          with_cm(tz.width_cm),
+        "height_cm":         with_cm(tz.height_cm),
+        "depth_cm":          with_cm(tz.depth_cm),
+        "seat_height_cm":    with_cm(tz.seat_height_cm),
+        "max_load":          tz.max_load or "",
+        "fabric_type":       tz.fabric_type or "",
+        "fabric_name":       tz.fabric_type or "",
+        "frame_material":    tz.frame_material or "",
+        "legs_material":     tz.legs_material or "",
+        "legs_material_text": tz.legs_material or "",
+        "tabletop_material": tz.tabletop_material or "",
+        "tabletop_finish":   tz.tabletop_finish or "",
+        "tabletop_load":     getattr(tz, "tabletop_load", "") or "",
+        "capacity_text":     getattr(tz, "capacity_text", "") or "",
+        "height_adjustment": getattr(tz, "height_adjustment", "") or "",
+        "backrest":          getattr(tz, "backrest", "") or "",
+        "comfort":           getattr(tz, "comfort", "") or "",
+        "seat_height":       with_cm(tz.seat_height_cm),
+        "color_range":       getattr(tz, "color_range", "") or "",
+        "space_saving":      getattr(tz, "space_saving", "") or "",
+        "design_accent":     getattr(tz, "design_accent", "") or "",
+        "utp_assembly":      tz.utp_1 or "",
+        "utp_surface":       tz.utp_2 or "",
+        "utp_care":          tz.utp_3 or "",
+        "utp_support":       tz.utp_1 or "",
+        "utp_construction":  tz.utp_2 or "",
+        "utp_durability":    tz.utp_1 or "",
+        "utp_scratch":       tz.utp_2 or "",
+        "utp_washable":      tz.utp_3 or "",
+        "utp_feel":          tz.utp_3 or "",
+        "utp_universal":     tz.utp_1 or "",
+        "utp_label":         tz.utp_2 or "",
+        "label":             "Антикоготь",
+        "description":       tz.utp_1 or "",
+    }
 
 
 @router.get("/api/photo-pick")
