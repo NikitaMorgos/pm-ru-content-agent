@@ -49,17 +49,18 @@ function buildNodeMap(templateNode, cloneNode, map) {
 }
 
 // ── Image utilities ─────────────────────────────────────────────────────────
-function findLargestImageNode(frame) {
-  let target = null, maxArea = 0;
+// Returns ALL image-fill nodes sorted largest→smallest
+function findAllImageNodes(frame) {
+  const results = [];
   function walk(n) {
     if ("fills" in n && Array.isArray(n.fills) && n.fills.some(f => f.type === "IMAGE")) {
-      const area = (n.width || 0) * (n.height || 0);
-      if (area > maxArea) { target = n; maxArea = area; }
+      results.push({ node: n, area: (n.width || 0) * (n.height || 0) });
     }
     if ("children" in n) n.children.forEach(walk);
   }
   walk(frame);
-  return target;
+  results.sort((a, b) => b.area - a.area);
+  return results.map(r => r.node);
 }
 
 // ── Results page ────────────────────────────────────────────────────────────
@@ -171,26 +172,28 @@ figma.ui.onmessage = async (msg) => {
       step: "text", detail: `${textSet} нодов заполнено, ${textFailed} пропущено`
     });
 
-    // 4. Replace / mark photo
-    const imgTarget = findLargestImageNode(workFrame);
+    // 4. Replace / mark photo — applies to ALL image-fill nodes in the frame
+    const imgNodes = findAllImageNodes(workFrame);
     if (photoBytes && photoBytes.length) {
       figma.ui.postMessage({ type: "slide-progress", jobId, slideType, step: "photo" });
-      if (imgTarget) {
+      if (imgNodes.length > 0) {
         const figmaImg = figma.createImage(new Uint8Array(photoBytes));
-        const fills = JSON.parse(JSON.stringify(imgTarget.fills));
-        const idx = fills.findIndex(f => f.type === "IMAGE");
-        if (idx >= 0) {
-          fills[idx] = { type: "IMAGE", scaleMode: "FILL", imageHash: figmaImg.hash };
-          imgTarget.fills = fills;
+        for (const imgNode of imgNodes) {
+          const fills = JSON.parse(JSON.stringify(imgNode.fills));
+          const idx = fills.findIndex(f => f.type === "IMAGE");
+          if (idx >= 0) {
+            fills[idx] = { type: "IMAGE", scaleMode: "FILL", imageHash: figmaImg.hash };
+            imgNode.fills = fills;
+          }
         }
       }
     } else {
-      if (imgTarget) {
-        imgTarget.fills = [{ type: "SOLID", color: { r: 1, g: 0.2, b: 0.2 }, opacity: 0.3 }];
+      if (imgNodes.length > 0) {
+        imgNodes[0].fills = [{ type: "SOLID", color: { r: 1, g: 0.2, b: 0.2 }, opacity: 0.3 }];
       }
       figma.ui.postMessage({
         type: "slide-progress", jobId, slideType,
-        step: "photo", detail: "⚠ фото не загружено — красная заливка"
+        step: "photo", detail: `⚠ фото не загружено (${imgNodes.length} нодов в шаблоне)`
       });
     }
 
